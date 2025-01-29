@@ -1,0 +1,65 @@
+// Task Management Endpoints
+app.get('/tasks', authenticate, async (req, res) => {
+  try {
+    const userId = req.user.uid;
+    const tasksSnapshot = await db.collection('tasks').where('userId', '==', userId).get();
+    const tasks = [];
+    tasksSnapshot.forEach((doc) => {
+      tasks.push({ id: doc.id, ...doc.data() });
+    });
+    res.json(tasks);
+  } catch (error) {
+    console.error('Error fetching tasks:', error);
+    res.status(500).json({ error: 'Failed to fetch tasks' });
+  }
+});
+
+app.post('/tasks', authenticate, async (req, res) => {
+  try {
+    const userId = req.user.uid;
+    const { title, description, dueDate, priority } = req.body;
+    const task = {
+      userId,
+      title,
+      description,
+      dueDate,
+      priority,
+      completed: false,
+      createdAt: new Date(),
+    };
+    const docRef = await db.collection('tasks').add(task);
+    res.json({ id: docRef.id, ...task });
+  } catch (error) {
+    console.error('Error creating task:', error);
+    res.status(500).json({ error: 'Failed to create task' });
+  }
+});
+
+app.put('/tasks/:id', authenticate, async (req, res) => {
+  try {
+    const taskId = req.params.id;
+    const { title, description, dueDate, priority, completed } = req.body;
+    await db.collection('tasks').doc(taskId).update({
+      title,
+      description,
+      dueDate,
+      priority,
+      completed,
+    });
+    res.json({ message: 'Task updated successfully' });
+  } catch (error) {
+    console.error('Error updating task:', error);
+    res.status(500).json({ error: 'Failed to update task' });
+  }
+});
+
+app.delete('/tasks/:id', authenticate, async (req, res) => {
+  try {
+    const taskId = req.params.id;
+    await db.collection('tasks').doc(taskId).delete();
+    res.json({ message: 'Task deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting task:', error);
+    res.status(500).json({ error: 'Failed to delete task' });
+  }
+});

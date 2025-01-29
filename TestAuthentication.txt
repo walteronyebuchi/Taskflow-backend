@@ -1,0 +1,2 @@
+cd taskflow-backend
+node index.js
